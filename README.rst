@@ -2,20 +2,34 @@
 s3s3
 ####
 
-s3s3 is a microservice to move files from one S3 compliant service to another (Swift, Ceph, AWS).
+A microservice that moves files from one S3-compliant service to another (Swift, Ceph, AWS)
+===========================================================================================
 
-s3s3 has two services. ``s3s3.scripts.listen`` subscribes and listens to a redis pubsub channel waiting for s3 object names. When notified it calls ``s3s3.api.upload`` and uploads that S3 object from the source to destination(s). ``s3s3.scripts.bucket`` uploads all keys in one s3 bucket to another.
+s3s3 is a robust way of transporting files between any combination of `Swift`_, `Ceph`_ and `AWS S3`_ object stores.
+s3s3 works around feature incompleteness in Ceph and Swift relative to AWS's S3.
 
-``s3s3.scripts.listen`` is meant to be a real-time daemon.
+.. _Swift: http://docs.openstack.org/developer/swift/
+.. _Ceph: http://ceph.com/ceph-storage/object-storage/
+.. _AWS S3: https://aws.amazon.com/s3/
 
-``s3s3.scripts.bucket`` is meant to run periodically as a cron job. Anything missed by ``s3s3.scripts.listen`` will be handled by this service.
+Some of the incompatibilities that s3s3 solves are:
 
-Summary
-=======
+- ``key.size`` and ``key.md5`` do not work with Ceph S3 without fetching the contents of the key (or s3 object)
+- Multipart uploads are not reliable with Ceph S3.
+- V4 signatures are not supported by Ceph S3.
 
-s3s3 is required because Ceph and Swift are not feature complete with AWS S3. Many available libraries that work well with AWS S3 do not work with Ceph and Swift.
+The clients
+-----------
 
-Some examples: ``key.size`` and ``key.md5`` do not work with Ceph S3 without fetching the contents of the key (or s3 object). Multipart uploads are not reliable with Ceph S3. V4 signatures are not supported by Ceph S3.
+s3s3 has two services: a real-time daemon (``s3s3.scripts.listen``) and a general upload tool (``s3s3.scripts.bucket``).
+
+``s3s3.scripts.listen`` is meant to be a real-time daemon. It subscribes and listens to a `redis`_ pubsub channel waiting for s3 object names. When notified it calls ``s3s3.api.upload`` and uploads that S3 object from the source to destination(s).
+
+``s3s3.scripts.bucket`` is meant to run periodically as a cron job.
+Its job is to upload all keys in one S3 bucket to another.
+Anything missed by ``s3s3.scripts.listen`` will be handled by this service.
+
+.. _redis: http://redis.io
 
 Configuration
 =============
